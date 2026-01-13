@@ -1,0 +1,777 @@
+{% extends "web/base.html" %}
+
+{% load humanize %}
+
+{% block title %}Dashboard - BankApp{% endblock %}
+
+{% block content %}
+
+<!-- Additional Dashboard Styles -->
+<style>
+    .welcome-banner {
+        background: linear-gradient(135deg, #2563eb 0%, #f97316 100%);
+        color: white;
+        border-radius: 15px;
+        padding: 40px;
+        margin-bottom: 30px;
+        box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .welcome-banner::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        right: -10%;
+        width: 400px;
+        height: 400px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+    }
+    
+    .welcome-banner::after {
+        content: '';
+        position: absolute;
+        bottom: -30%;
+        left: -5%;
+        width: 300px;
+        height: 300px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 50%;
+    }
+    
+    .welcome-content {
+        position: relative;
+        z-index: 2;
+    }
+    
+    .avatar-circle {
+        width: 80px;
+        height: 80px;
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 2.5rem;
+        border: 3px solid rgba(255, 255, 255, 0.3);
+        animation: float 3s ease-in-out infinite;
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0px); }
+        50% { transform: translateY(-10px); }
+    }
+    
+    .account-card {
+        background: linear-gradient(135deg, #fff 0%, #f8f9fa 100%);
+        border: none;
+        border-radius: 15px;
+        padding: 25px;
+        margin-bottom: 20px;
+        transition: all 0.3s ease;
+        cursor: pointer;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+    }
+    
+    .account-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 40px rgba(37, 99, 235, 0.15);
+    }
+    
+    .account-card.checking { border-left: 5px solid #3b82f6; }
+    .account-card.savings { border-left: 5px solid #10b981; }
+    .account-card.credit { border-left: 5px solid #f59e0b; }
+    
+    .quick-action-btn {
+        padding: 20px;
+        border-radius: 12px;
+        border: none;
+        transition: all 0.3s ease;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        color: white;
+        text-decoration: none !important;
+        overflow: hidden;
+        position: relative;
+    }
+    
+    .quick-action-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: rgba(255, 255, 255, 0.2);
+        transition: left 0.3s ease;
+    }
+    
+    .quick-action-btn:hover::before {
+        left: 100%;
+    }
+    
+    .quick-action-btn:hover {
+        transform: scale(1.05);
+    }
+    
+    .transaction-row {
+        padding: 15px 0;
+        border-bottom: 1px solid #e5e7eb;
+        display: grid;
+        grid-template-columns: 60px 1fr 100px 100px;
+        align-items: center;
+        gap: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .transaction-row:hover {
+        background: rgba(102, 126, 234, 0.05);
+        padding-left: 10px;
+        padding-right: 10px;
+    }
+    
+    .transaction-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.3rem;
+    }
+    
+    .transaction-icon.deposit { background: rgba(16, 185, 129, 0.1); color: #10b981; }
+    .transaction-icon.withdraw { background: rgba(239, 68, 68, 0.1); color: #ef4444; }
+    .transaction-icon.transfer { background: rgba(37, 99, 235, 0.1); color: #2563eb; }
+    
+    .notification-alert {
+        animation: slideInDown 0.5s ease;
+        margin-bottom: 15px;
+    }
+    
+    @keyframes slideInDown {
+        from {
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+    
+    .promo-card {
+        background: linear-gradient(135deg, #2563eb 0%, #f97316 100%);
+        border-radius: 12px;
+        padding: 20px;
+        color: white;
+        margin-bottom: 15px;
+        transition: all 0.3s ease;
+    }
+    
+    .promo-card:hover {
+        transform: translateX(5px);
+        box-shadow: 0 10px 25px rgba(37, 99, 235, 0.2);
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 300px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-box {
+        background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+        border-radius: 12px;
+        padding: 20px;
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    .stat-value {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1e3a8a;
+    }
+    
+    .stat-label {
+        font-size: 0.85rem;
+        color: #6b7280;
+        margin-top: 5px;
+    }
+</style>
+
+<!-- Notifications Banner -->
+{% if unread_notifications %}
+<div class="notification-alert alert alert-info alert-custom d-flex align-items-center justify-content-between mb-4" role="alert">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-bell-fill me-3" style="font-size: 1.3rem;"></i>
+        <div>
+            <strong>{{ unread_notifications.count }} new notification{{ unread_notifications.count|pluralize }}</strong>
+        </div>
+    </div>
+    <a href="{% url 'notifications' %}" class="btn btn-sm btn-primary-custom">View All</a>
+</div>
+{% endif %}
+<!-- Welcome Banner -->
+<div class="welcome-banner">
+    <div class="welcome-content">
+        <div class="d-flex justify-content-between align-items-center">
+            <div>
+                <h2 class="mb-2" style="font-size: 2.5rem; font-weight: 700;">Welcome back, {{ request.user.first_name|default:"User" }}! 👋</h2>
+                <p class="mb-0" style="font-size: 1.1rem; opacity: 0.95;">
+                    <i class="bi bi-calendar-check"></i> {{ "today"|date:"l, F j, Y" }} | Account Status: <strong>Active</strong>
+                </p>
+            </div>
+            <div class="avatar-circle">
+                <i class="bi bi-person-fill"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Account Overview Cards -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <h5 class="mb-3 fw-700">Your Accounts</h5>
+        
+        <!-- Primary Account Card -->
+        <div class="account-card checking">
+            <div class="d-flex justify-content-between align-items-start mb-3">
+                <div>
+                    <p class="text-muted mb-1" style="font-size: 0.9rem;">Checking Account</p>
+                    <h4 class="mb-0">{{ account.get_account_type_display }}</h4>
+                </div>
+                <span class="badge bg-primary">Primary</span>
+            </div>
+            <div class="row align-items-end mt-4">
+                <div class="col">
+                    <p class="text-muted mb-1" style="font-size: 0.9rem;">Account Number</p>
+                    <p class="mb-0" style="font-family: monospace; font-weight: 600;">{{ account.account_number }}</p>
+                </div>
+                <div class="col text-end">
+                    <p class="text-muted mb-1" style="font-size: 0.9rem;">Available Balance</p>
+                    <div id="balance-hidden" style="display: block;">
+                        <p class="mb-0" style="font-size: 1.5rem; color: #d1d5db;">••••••••</p>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-primary" onclick="toggleBalance()">
+                            <i class="bi bi-eye"></i> Show
+                        </button>
+                    </div>
+                    <div id="balance-display" style="display: none;">
+                        <h3 class="mb-0" style="color: #10b981; font-weight: 700;">${{ account.balance|floatformat:2|intcomma }}</h3>
+                        <button type="button" class="btn btn-link btn-sm p-0 text-danger" onclick="toggleBalance()">
+                            <i class="bi bi-eye-slash"></i> Hide
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Debit Card Quick View -->
+    {% if debit_card %}
+    <div class="col-lg-4">
+        <h5 class="mb-3 fw-700">Quick Info</h5>
+        <div class="card-custom p-4">
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-credit-card" style="font-size: 1.8rem; color: #667eea; margin-right: 10px;"></i>
+                <div>
+                    <p class="text-muted mb-1" style="font-size: 0.9rem;">Debit Card</p>
+                    <p class="mb-0 fw-600">{{ debit_card.card_number|slice:"-4:" }}</p>
+                </div>
+            </div>
+            <div class="d-flex align-items-center mb-3">
+                <i class="bi bi-check-circle-fill text-success me-2"></i>
+                <span {% if debit_card.status == 'ACTIVE' %}class="badge bg-success"{% else %}class="badge bg-warning"{% endif %}>
+                    {{ debit_card.get_status_display }}
+                </span>
+            </div>
+            <a href="{% url 'view_debit_card' %}" class="btn btn-sm btn-primary-custom w-100">View Details</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Quick Actions Row -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3 fw-700">Quick Actions</h5>
+        <div class="row g-3">
+            <div class="col-lg-3 col-md-6">
+                <a href="{% url 'deposit' %}" class="quick-action-btn btn-success-custom w-100" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+                    <i class="bi bi-plus-lg" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <div style="font-size: 1.1rem;">Deposit</div>
+                        <small style="opacity: 0.9;">Add funds</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <a href="{% url 'withdraw' %}" class="quick-action-btn btn-warning-custom w-100" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <i class="bi bi-dash-lg" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <div style="font-size: 1.1rem;">Withdraw</div>
+                        <small style="opacity: 0.9;">Remove funds</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <a href="{% url 'transfer' %}" class="quick-action-btn w-100" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);">
+                    <i class="bi bi-arrow-left-right" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <div style="font-size: 1.1rem;">Transfer</div>
+                        <small style="opacity: 0.9;">Send money</small>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <a href="{% url 'pay_bill' %}" class="quick-action-btn w-100" style="background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%);">
+                    <i class="bi bi-receipt" style="font-size: 1.5rem;"></i>
+                    <div>
+                        <div style="font-size: 1.1rem;">Pay Bills</div>
+                        <small style="opacity: 0.9;">All providers</small>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Financial Services Cards -->
+<div class="row mb-4">
+    <div class="col-12">
+        <h5 class="mb-3 fw-700">Financial Services</h5>
+        <div class="row g-3">
+            <!-- Loans -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-custom p-4 text-center" style="border-left: 5px solid #667eea; transition: all 0.3s;">
+                    <i class="bi bi-cash-coin" style="font-size: 2.5rem; color: #667eea; margin-bottom: 10px;"></i>
+                    <h6 class="fw-700 mb-2">Loans</h6>
+                    <p class="text-muted small mb-3">Personal, Home, Auto & More</p>
+                    <a href="{% url 'apply_for_loan' %}" class="btn btn-sm btn-primary-custom w-100">Apply Now</a>
+                </div>
+            </div>
+
+            <!-- Statements -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-custom p-4 text-center" style="border-left: 5px solid #10b981; transition: all 0.3s;">
+                    <i class="bi bi-file-earmark-pdf" style="font-size: 2.5rem; color: #10b981; margin-bottom: 10px;"></i>
+                    <h6 class="fw-700 mb-2">Statements</h6>
+                    <p class="text-muted small mb-3">Download & Manage</p>
+                    <a href="{% url 'request_bank_statement' %}" class="btn btn-sm btn-success-custom w-100">Request</a>
+                </div>
+            </div>
+
+            <!-- Payments -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-custom p-4 text-center" style="border-left: 5px solid #f59e0b; transition: all 0.3s;">
+                    <i class="bi bi-credit-card" style="font-size: 2.5rem; color: #f59e0b; margin-bottom: 10px;"></i>
+                    <h6 class="fw-700 mb-2">Payments</h6>
+                    <p class="text-muted small mb-3">All Your Bills</p>
+                    <a href="{% url 'bill_payments' %}" class="btn btn-sm btn-warning-custom w-100">History</a>
+                </div>
+            </div>
+
+            <!-- Security PIN -->
+            <div class="col-lg-3 col-md-6">
+                <div class="card-custom p-4 text-center" style="border-left: 5px solid #ef4444; transition: all 0.3s;">
+                    <i class="bi bi-shield-check" style="font-size: 2.5rem; color: #ef4444; margin-bottom: 10px;"></i>
+                    <h6 class="fw-700 mb-2">Security PIN</h6>
+                    <div id="pin-hidden">
+                        <p class="badge bg-danger" style="font-size: 1rem; padding: 0.5rem 1rem; margin-bottom: 10px;">••••</p>
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="togglePIN()">
+                            <i class="bi bi-eye"></i> Show PIN
+                        </button>
+                    </div>
+                    <div id="pin-display" style="display: none;">
+                        <p class="badge bg-danger" style="font-size: 1rem; padding: 0.5rem 1rem; margin-bottom: 10px;">{{ request.user.pin }}</p>
+                        <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="togglePIN()">
+                            <i class="bi bi-eye-slash"></i> Hide PIN
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Promotions & Offers -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <h5 class="mb-3 fw-700">Special Offers</h5>
+        <div class="promo-card">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="fw-700 mb-1">High Yield Savings</h6>
+                    <p class="mb-0" style="font-size: 0.9rem; opacity: 0.9;">Earn up to 4.5% APY</p>
+                </div>
+                <span class="badge bg-white text-primary">NEW</span>
+            </div>
+        </div>
+        <div class="promo-card" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%);">
+            <div class="d-flex justify-content-between align-items-start">
+                <div>
+                    <h6 class="fw-700 mb-1">Cashback Rewards</h6>
+                    <p class="mb-0" style="font-size: 0.9rem; opacity: 0.9;">2% back on all purchases</p>
+                </div>
+                <span class="badge bg-white text-success">Active</span>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6">
+        <h5 class="mb-3 fw-700">Account Analytics</h5>
+        <div class="row g-2">
+            <div class="col-6">
+                <div class="stat-box">
+                    <div class="stat-value">{{ recent_transactions|length }}</div>
+                    <div class="stat-label">Transactions</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="stat-box">
+                    <div class="stat-value">{{ request.user.date_joined|date:"b d" }}</div>
+                    <div class="stat-label">Member Since</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Analytics Charts -->
+<div class="row mb-4">
+    <div class="col-lg-6">
+        <div class="card-custom p-4">
+            <h6 class="fw-700 mb-4">Spending Trends (Last 7 Days)</h6>
+            <div class="chart-container">
+                <canvas id="spendingChart"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card-custom p-4">
+            <h6 class="fw-700 mb-4">Income vs Expenses</h6>
+            <div class="chart-container">
+                <canvas id="incomeExpenseChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card-custom p-4">
+            <h6 class="fw-700 mb-4">Account Balance Growth</h6>
+            <div class="chart-container" style="height: 250px;">
+                <canvas id="balanceGrowthChart"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Transactions -->
+<div class="row">
+    <div class="col-12 mb-4">
+        <h5 class="mb-3 fw-700">Recent Transactions</h5>
+        <div class="card-custom p-4">
+            {% if recent_transactions %}
+                <div style="max-height: 400px; overflow-y: auto;">
+                    {% for transaction in recent_transactions|slice:":10" %}
+                    <div class="transaction-row">
+                        <div class="transaction-icon {% if transaction.transaction_type == 'DEPOSIT' %}deposit{% elif transaction.transaction_type == 'WITHDRAW' %}withdraw{% else %}transfer{% endif %}">
+                            {% if transaction.transaction_type == 'DEPOSIT' %}
+                                <i class="bi bi-plus-lg"></i>
+                            {% elif transaction.transaction_type == 'WITHDRAW' %}
+                                <i class="bi bi-dash-lg"></i>
+                            {% else %}
+                                <i class="bi bi-arrow-left-right"></i>
+                            {% endif %}
+                        </div>
+                        <div>
+                            <p class="mb-0 fw-600">{{ transaction.description|truncatewords:3 }}</p>
+                            <small class="text-muted">{{ transaction.timestamp|date:"M d, Y" }}</small>
+                        </div>
+                        <div class="text-end">
+                            <p class="mb-0 fw-600">
+                                {% if transaction.transaction_type == 'DEPOSIT' %}
+                                    <span class="text-success">+${{ transaction.amount|floatformat:2|intcomma }}</span>
+                                {% else %}
+                                    <span class="text-danger">-${{ transaction.amount|floatformat:2|intcomma }}</span>
+                                {% endif %}
+                            </p>
+                            <small class="text-muted">
+                                <i class="bi bi-check-circle-fill text-success"></i> Completed
+                            </small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="bi bi-inbox" style="font-size: 3rem; color: #d1d5db;"></i>
+                <p class="text-muted mt-2">No transactions yet. Start by making your first transaction!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Footer Info Row -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <h5 class="mb-3 fw-700">Security & Support</h5>
+        <div class="card-custom p-4">
+            <div class="mb-3">
+                <p class="mb-2" style="font-size: 0.95rem; color: #667eea;"><i class="bi bi-shield-check"></i> <strong>Security Tips</strong></p>
+                <ul class="list-unstyled small text-muted" style="font-size: 0.9rem;">
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Never share your password</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Log out from public devices</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Review transactions regularly</li>
+                    <li><i class="bi bi-check-circle text-success me-2"></i>Update your PIN monthly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-6 mb-4">
+        <h5 class="mb-3 fw-700">Need Help?</h5>
+        <div class="card-custom p-4">
+            <div class="mb-3">
+                <div class="d-flex gap-2 mb-2">
+                    <i class="bi bi-telephone text-primary" style="font-size: 1.2rem;"></i>
+                    <div>
+                        <p class="mb-0 small"><strong>Call Us</strong></p>
+                        <p class="mb-0 small text-muted">1-800-BANKAPP</p>
+                    </div>
+                </div>
+            </div>
+            <div>
+                <div class="d-flex gap-2">
+                    <i class="bi bi-chat-dots text-success" style="font-size: 1.2rem;"></i>
+                    <div>
+                        <p class="mb-0 small"><strong>24/7 Support</strong></p>
+                        <p class="mb-0 small text-muted">Live chat available</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js Library -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+<script>
+    // Toggle Balance Visibility
+    function toggleBalance() {
+        const balanceDisplay = document.getElementById('balance-display');
+        const balanceHidden = document.getElementById('balance-hidden');
+        
+        if (balanceDisplay.style.display === 'none') {
+            balanceDisplay.style.display = 'block';
+            balanceHidden.style.display = 'none';
+        } else {
+            balanceDisplay.style.display = 'none';
+            balanceHidden.style.display = 'block';
+        }
+    }
+
+    // Toggle PIN Visibility
+    function togglePIN() {
+        const pinDisplay = document.getElementById('pin-display');
+        const pinHidden = document.getElementById('pin-hidden');
+        
+        if (pinDisplay.style.display === 'none') {
+            pinDisplay.style.display = 'block';
+            pinHidden.style.display = 'none';
+        } else {
+            pinDisplay.style.display = 'none';
+            pinHidden.style.display = 'block';
+        }
+    }
+
+    // Initialize Charts when document is ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeCharts();
+    });
+
+    function initializeCharts() {
+        // Spending Trends Chart
+        const spendingCtx = document.getElementById('spendingChart');
+        if (spendingCtx) {
+            new Chart(spendingCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Daily Spending',
+                        data: [120, 240, 180, 220, 190, 290, 160],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.1)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 5,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                        pointHoverRadius: 7,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Income vs Expenses Chart
+        const incomeExpenseCtx = document.getElementById('incomeExpenseChart');
+        if (incomeExpenseCtx) {
+            new Chart(incomeExpenseCtx, {
+                type: 'bar',
+                data: {
+                    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4'],
+                    datasets: [
+                        {
+                            label: 'Income',
+                            data: [3500, 3200, 3800, 4100],
+                            backgroundColor: 'rgba(16, 185, 129, 0.8)',
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        },
+                        {
+                            label: 'Expenses',
+                            data: [2200, 1900, 2400, 2100],
+                            backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                            borderRadius: 8,
+                            borderSkipped: false,
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Account Balance Growth Chart
+        const balanceGrowthCtx = document.getElementById('balanceGrowthChart');
+        if (balanceGrowthCtx) {
+            new Chart(balanceGrowthCtx, {
+                type: 'line',
+                data: {
+                    labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                    datasets: [{
+                        label: 'Account Balance',
+                        data: [15000, 16200, 17100, 18500, 19800, 21200, 22100, 23500, 24800, 26100, 27500, 29000],
+                        borderColor: '#667eea',
+                        backgroundColor: 'rgba(102, 126, 234, 0.15)',
+                        borderWidth: 3,
+                        tension: 0.4,
+                        fill: true,
+                        pointRadius: 4,
+                        pointBackgroundColor: '#667eea',
+                        pointBorderColor: 'white',
+                        pointBorderWidth: 2,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                usePointStyle: true,
+                                padding: 15
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            grid: {
+                                color: 'rgba(0, 0, 0, 0.05)'
+                            },
+                            ticks: {
+                                callback: function(value) {
+                                    return '$' + value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    }
+
+    // Mark notification as read
+    function markNotificationAsRead(notificationId) {
+        fetch(`/api/notification/${notificationId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                console.log('Notification marked as read');
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}

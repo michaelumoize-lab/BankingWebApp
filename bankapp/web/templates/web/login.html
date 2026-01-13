@@ -1,0 +1,49 @@
+{% extends "web/base.html" %}
+
+{% block title %}Login - BankApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-5">
+        <div class="card card-custom">
+            <div class="card-header-custom text-center">
+                <h2 class="mb-0"><i class="bi bi-lock"></i> Login</h2>
+            </div>
+            <div class="card-body p-5">
+                {% if error %}
+                <div class="alert alert-danger alert-custom" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> {{ error }}
+                </div>
+                {% endif %}
+                
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    <div class="mb-3">
+                        <label for="email" class="form-label fw-600">Email Address</label>
+                        <input type="email" class="form-control form-control-custom" id="email" name="username" placeholder="Enter your email" required>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="password" class="form-label fw-600">Password</label>
+                        <input type="password" class="form-control form-control-custom" id="password" name="password" placeholder="Enter your password" required>
+                    </div>
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary-custom btn-custom py-2">
+                            <i class="bi bi-box-arrow-in-right"></i> Login
+                        </button>
+                    </div>
+                </form>
+                
+                <hr>
+                <p class="text-center text-muted small mb-0">
+                    Don't have an account? <a href="{% url 'signup' %}" class="text-primary fw-600">Sign up here</a>
+                </p>
+                <p class="text-center text-muted small mt-2">
+                    <a href="{% url 'home' %}" class="text-muted">← Back to Home</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,97 @@
+{% extends "web/base.html" %}
+
+{% block title %}Bank Statements - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="row">
+        <div class="col-12">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h3 class="mb-0">
+                        <i class="bi bi-file-earmark-pdf"></i> My Bank Statements
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if statements %}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead class="table-light">
+                                <tr>
+                                    <th><i class="bi bi-calendar3"></i> Period</th>
+                                    <th>Transactions</th>
+                                    <th>Opening Balance</th>
+                                    <th>Closing Balance</th>
+                                    <th>Format</th>
+                                    <th>Status</th>
+                                    <th>Requested On</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for statement in statements %}
+                                <tr>
+                                    <td>
+                                        <strong>{{ statement.start_date }} to {{ statement.end_date }}</strong>
+                                    </td>
+                                    <td>{{ statement.transaction_count }}</td>
+                                    <td>${{ statement.opening_balance }}</td>
+                                    <td>
+                                        <span class="badge bg-info text-dark">${{ statement.closing_balance }}</span>
+                                    </td>
+                                    <td>
+                                        <span class="badge bg-secondary">{{ statement.format_type }}</span>
+                                    </td>
+                                    <td>
+                                        {% if statement.status == 'PENDING' %}
+                                        <span class="badge bg-warning"><i class="bi bi-hourglass-split"></i> Pending</span>
+                                        {% elif statement.status == 'GENERATED' %}
+                                        <span class="badge bg-info"><i class="bi bi-hourglass"></i> Generating</span>
+                                        {% elif statement.status == 'READY' %}
+                                        <span class="badge bg-success"><i class="bi bi-check-circle"></i> Ready</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">{{ statement.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ statement.requested_at|date:"M d, Y" }}</td>
+                                    <td>
+                                        {% if statement.statement_file %}
+                                        <a href="{{ statement.statement_file.url }}" class="btn btn-sm btn-success btn-custom" download>
+                                            <i class="bi bi-download"></i> Download
+                                        </a>
+                                        {% elif statement.status == 'READY' %}
+                                        <span class="text-muted small">Ready for download</span>
+                                        {% else %}
+                                        <span class="text-muted small">{{ statement.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                        <h5 class="mt-3 text-muted">No Bank Statements</h5>
+                        <p class="text-muted">You haven't requested any bank statements yet.</p>
+                        <a href="{% url 'request_bank_statement' %}" class="btn btn-primary btn-custom">
+                            <i class="bi bi-plus-lg"></i> Request a Statement
+                        </a>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="mt-4 text-center">
+                <a href="{% url 'request_bank_statement' %}" class="btn btn-success btn-custom">
+                    <i class="bi bi-plus-lg"></i> Request New Statement
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-2">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

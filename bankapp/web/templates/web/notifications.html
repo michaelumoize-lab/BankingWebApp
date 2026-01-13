@@ -1,0 +1,108 @@
+{% extends "web/base.html" %}
+
+{% block title %}Notifications - BankApp{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-8 mx-auto">
+        <!-- Notifications Header -->
+        <div class="card card-custom mb-4">
+            <div class="card-header-custom">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h2 class="mb-0 text-white"><i class="bi bi-bell"></i> Notifications Center</h2>
+                    {% if unread_count > 0 %}
+                    <span class="badge bg-danger">{{ unread_count }} unread</span>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="card-body p-5">
+                {% if not notifications %}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+                    <p class="text-muted mt-3">No notifications yet</p>
+                </div>
+                {% else %}
+                <div class="list-group">
+                    {% for notification in notifications %}
+                    <div class="list-group-item list-group-item-action {% if not notification.is_read %}active-notification{% endif %}" style="border-left: 4px solid {% if notification.notification_type == 'APPROVAL' %}#10b981{% elif notification.notification_type == 'REJECTION' %}#ef4444{% else %}#3b82f6{% endif %}; background: {% if not notification.is_read %}rgba(102, 126, 234, 0.05){% endif %};">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div class="d-flex align-items-center gap-2">
+                                {% if notification.notification_type == 'APPROVAL' %}
+                                <i class="bi bi-check-circle-fill text-success" style="font-size: 1.2rem;"></i>
+                                {% elif notification.notification_type == 'REJECTION' %}
+                                <i class="bi bi-x-circle-fill text-danger" style="font-size: 1.2rem;"></i>
+                                {% elif notification.notification_type == 'SECURITY' %}
+                                <i class="bi bi-shield-exclamation text-warning" style="font-size: 1.2rem;"></i>
+                                {% else %}
+                                <i class="bi bi-info-circle-fill text-info" style="font-size: 1.2rem;"></i>
+                                {% endif %}
+                                <div>
+                                    <h6 class="mb-0 fw-bold">{{ notification.title }}</h6>
+                                    <small class="text-muted">{{ notification.created_at|date:"M d, Y H:i" }}</small>
+                                </div>
+                            </div>
+                            <div>
+                                {% if not notification.is_read %}
+                                <span class="badge bg-success">NEW</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <p class="mb-0 text-muted">{{ notification.message }}</p>
+                        
+                        {% if not notification.is_read %}
+                        <button class="btn btn-sm btn-outline-primary mt-2" onclick="markNotificationAsRead('{{ notification.id }}')">
+                            <i class="bi bi-check"></i> Mark as Read
+                        </button>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .active-notification {
+        font-weight: 500;
+    }
+
+    .list-group-item {
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        margin-bottom: 12px;
+        padding: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .list-group-item:hover {
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    }
+</style>
+
+<script>
+    function markNotificationAsRead(notificationId) {
+        fetch(`/api/notification/${notificationId}/mark-read/`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value || ''
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Reload the page to show updated notification status
+                location.reload();
+            }
+        })
+        .catch(error => console.error('Error:', error));
+    }
+</script>
+{% endblock %}

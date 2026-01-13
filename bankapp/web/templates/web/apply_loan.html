@@ -1,0 +1,169 @@
+{% extends "web/base.html" %}
+
+{% block title %}Apply for Loan - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h3 class="mb-0">
+                        <i class="bi bi-cash-coin"></i> Apply for a Loan
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i> <strong>Success!</strong> Your loan application has been submitted.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <div class="border-top pt-4 mt-4">
+                        <h5 class="mb-3">Application Summary</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Loan Type:</strong></td>
+                                <td>{{ loan.get_loan_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Loan Amount:</strong></td>
+                                <td>${{ loan.loan_amount }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Interest Rate:</strong></td>
+                                <td>{{ loan.interest_rate }}% per annum</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Loan Term:</strong></td>
+                                <td>{{ loan.loan_term_months }} months</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Estimated Monthly Payment:</strong></td>
+                                <td>${{ loan.monthly_payment }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total Repayment:</strong></td>
+                                <td>${{ loan.total_repayment }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td><span class="badge bg-warning">{{ loan.get_status_display }}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted"><i class="bi bi-info-circle"></i> Your application is pending admin review. You will receive a notification once it's reviewed.</p>
+                        <a href="{% url 'dashboard' %}" class="btn btn-primary btn-custom">Back to Dashboard</a>
+                    </div>
+                    {% elif existing_loan %}
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> You already have a pending or approved loan application. You can view it below.
+                    </div>
+                    
+                    <div class="border-top pt-4 mt-4">
+                        <h5 class="mb-3">Your Application</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Loan Type:</strong></td>
+                                <td>{{ existing_loan.get_loan_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Loan Amount:</strong></td>
+                                <td>${{ existing_loan.loan_amount }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td>
+                                    {% if existing_loan.status == 'PENDING' %}
+                                    <span class="badge bg-warning">Pending Review</span>
+                                    {% elif existing_loan.status == 'APPROVED' %}
+                                    <span class="badge bg-success">Approved</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">{{ existing_loan.get_status_display }}</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <a href="{% url 'loan_applications' %}" class="btn btn-primary btn-custom">View All Applications</a>
+                    </div>
+                    {% else %}
+                    {% if errors %}
+                    <div class="alert alert-danger">
+                        <strong>Please fix the following errors:</strong>
+                        <ul class="mb-0">
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="loan_type" class="form-label"><strong>Loan Type</strong></label>
+                            <select name="loan_type" id="loan_type" class="form-control form-control-custom" required>
+                                <option value="">Select a loan type</option>
+                                {% for code, label in loan_types %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="loan_amount" class="form-label"><strong>Loan Amount ($)</strong></label>
+                            <input type="number" name="loan_amount" id="loan_amount" class="form-control form-control-custom" step="0.01" min="100" required placeholder="Enter loan amount">
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="interest_rate" class="form-label"><strong>Annual Interest Rate (%)</strong></label>
+                                <input type="number" name="interest_rate" id="interest_rate" class="form-control form-control-custom" step="0.01" min="0" required placeholder="e.g., 5.5">
+                            </div>
+                            
+                            <div class="col-md-6 mb-3">
+                                <label for="loan_term_months" class="form-label"><strong>Loan Term (Months)</strong></label>
+                                <input type="number" name="loan_term_months" id="loan_term_months" class="form-control form-control-custom" min="1" max="360" required placeholder="e.g., 60">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="purpose" class="form-label"><strong>Purpose of Loan</strong></label>
+                            <textarea name="purpose" id="purpose" class="form-control form-control-custom" rows="3" required placeholder="Tell us why you need this loan"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="employment_status" class="form-label"><strong>Employment Status</strong></label>
+                            <input type="text" name="employment_status" id="employment_status" class="form-control form-control-custom" placeholder="e.g., Employed, Self-employed">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="annual_income" class="form-label"><strong>Annual Income ($)</strong></label>
+                            <input type="number" name="annual_income" id="annual_income" class="form-control form-control-custom" step="0.01" min="0" placeholder="Your annual income">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="collateral" class="form-label"><strong>Collateral Details (if any)</strong></label>
+                            <textarea name="collateral" id="collateral" class="form-control form-control-custom" rows="3" placeholder="Describe any collateral you can offer"></textarea>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-sm-flex">
+                            <button type="submit" class="btn btn-primary btn-custom flex-grow-1">
+                                <i class="bi bi-check-lg"></i> Submit Application
+                            </button>
+                            <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary">Cancel</a>
+                        </div>
+                    </form>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

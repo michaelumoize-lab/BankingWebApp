@@ -1,0 +1,135 @@
+{% extends "web/base.html" %}
+
+{% block title %}Pay Bills - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h3 class="mb-0">
+                        <i class="bi bi-receipt"></i> Pay Your Bills
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i> <strong>Success!</strong> Your bill payment has been completed.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <div class="border-top pt-4 mt-4">
+                        <h5 class="mb-3">Payment Confirmation</h5>
+                        <div class="alert alert-info">
+                            <strong><i class="bi bi-info-circle"></i> Reference Number:</strong> {{ bill_payment.reference_number }}
+                        </div>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Bill Type:</strong></td>
+                                <td>{{ bill_payment.get_bill_type_display }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Provider:</strong></td>
+                                <td>{{ bill_payment.provider_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Account Number:</strong></td>
+                                <td>{{ bill_payment.account_number }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Amount Paid:</strong></td>
+                                <td><span class="badge bg-danger text-light">${{ bill_payment.amount }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td><span class="badge bg-success">{{ bill_payment.get_status_display }}</span></td>
+                            </tr>
+                            <tr>
+                                <td><strong>Payment Date:</strong></td>
+                                <td>{{ bill_payment.paid_at|date:"M d, Y h:i A" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted"><i class="bi bi-info-circle"></i> A confirmation has been sent to your email. Your payment has been deducted from your account.</p>
+                        <a href="{% url 'bill_payments' %}" class="btn btn-primary btn-custom">View All Payments</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-2">Back to Dashboard</a>
+                    </div>
+                    {% else %}
+                    {% if errors %}
+                    <div class="alert alert-danger">
+                        <strong>Please fix the following errors:</strong>
+                        <ul class="mb-0">
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="bill_type" class="form-label"><strong>Bill Type</strong></label>
+                            <select name="bill_type" id="bill_type" class="form-control form-control-custom" required>
+                                <option value="">Select a bill type</option>
+                                {% for code, label in bill_types %}
+                                <option value="{{ code }}">{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="provider_name" class="form-label"><strong>Provider Name</strong></label>
+                            <input type="text" name="provider_name" id="provider_name" class="form-control form-control-custom" required placeholder="e.g., XYZ Electricity Company">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="account_number" class="form-label"><strong>Your Account Number with Provider</strong></label>
+                            <input type="text" name="account_number" id="account_number" class="form-control form-control-custom" required placeholder="Enter your account/customer number">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="amount" class="form-label"><strong>Payment Amount ($)</strong></label>
+                            <input type="number" name="amount" id="amount" class="form-control form-control-custom" step="0.01" min="0.01" required placeholder="Enter amount to pay">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="due_date" class="form-label"><strong>Due Date (Optional)</strong></label>
+                            <input type="date" name="due_date" id="due_date" class="form-control form-control-custom">
+                            <small class="text-muted">Leave blank to use today's date</small>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <strong><i class="bi bi-exclamation-triangle"></i> Authentication Required</strong>
+                            <p class="mb-2">For security, you must enter your 4-digit PIN to confirm this payment.</p>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="pin" class="form-label"><strong>Your 4-Digit PIN</strong></label>
+                            <input type="password" name="pin" id="pin" class="form-control form-control-custom" maxlength="4" required placeholder="••••">
+                            <small class="text-muted">This PIN is required to authenticate all transactions</small>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-sm-flex">
+                            <button type="submit" class="btn btn-success btn-custom flex-grow-1">
+                                <i class="bi bi-check-lg"></i> Pay Bill
+                            </button>
+                            <a href="{% url 'bill_payments' %}" class="btn btn-outline-secondary">View Payments</a>
+                        </div>
+                    </form>
+                    
+                    <div class="border-top pt-4 mt-4">
+                        <h6 class="text-muted mb-3"><i class="bi bi-shield-check"></i> Why do we need your PIN?</h6>
+                        <p class="text-muted small mb-0">Your 4-digit PIN is a security measure to authenticate and authorize your transactions. It protects your account from unauthorized payments.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

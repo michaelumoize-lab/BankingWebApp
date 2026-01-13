@@ -1,0 +1,155 @@
+{% extends "web/base.html" %}
+
+{% block title %}Request Bank Statement - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h3 class="mb-0">
+                        <i class="bi bi-file-earmark-pdf"></i> Request Bank Statement
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    {% if success %}
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i> <strong>Success!</strong> Your bank statement has been generated.
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                    
+                    <div class="border-top pt-4 mt-4">
+                        <h5 class="mb-3">Statement Summary</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>Period:</strong></td>
+                                <td>{{ statement.start_date }} to {{ statement.end_date }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Transactions:</strong></td>
+                                <td>{{ statement.transaction_count }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Opening Balance:</strong></td>
+                                <td>${{ statement.opening_balance }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Closing Balance:</strong></td>
+                                <td>${{ statement.closing_balance }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Format:</strong></td>
+                                <td>{{ statement.format_type }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Status:</strong></td>
+                                <td><span class="badge bg-success">{{ statement.get_status_display }}</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div class="mt-4">
+                        <p class="text-muted"><i class="bi bi-info-circle"></i> Your statement has been generated and is ready for download.</p>
+                        <a href="{% url 'bank_statements' %}" class="btn btn-primary btn-custom">View All Statements</a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary ms-2">Back to Dashboard</a>
+                    </div>
+                    {% else %}
+                    {% if errors %}
+                    <div class="alert alert-danger">
+                        <strong>Please fix the following errors:</strong>
+                        <ul class="mb-0">
+                            {% for error in errors %}
+                            <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> <strong>Generate your bank statement</strong> by selecting a date range. The statement will include all transactions during this period.
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="start_date" class="form-label"><strong>Start Date</strong></label>
+                                <input type="date" name="start_date" id="start_date" class="form-control form-control-custom" required>
+                                <small class="text-muted">Select the start date for your statement</small>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="end_date" class="form-label"><strong>End Date</strong></label>
+                                <input type="date" name="end_date" id="end_date" class="form-control form-control-custom" required>
+                                <small class="text-muted">Select the end date (cannot be in future)</small>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="format_type" class="form-label"><strong>Statement Format</strong></label>
+                            <select name="format_type" id="format_type" class="form-control form-control-custom">
+                                <option value="PDF">PDF Document</option>
+                                <option value="CSV">CSV Spreadsheet</option>
+                            </select>
+                            <small class="text-muted">Choose your preferred file format</small>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-sm-flex">
+                            <button type="submit" class="btn btn-success btn-custom flex-grow-1">
+                                <i class="bi bi-download"></i> Generate Statement
+                            </button>
+                            <a href="{% url 'bank_statements' %}" class="btn btn-outline-secondary">View Previous</a>
+                        </div>
+                    </form>
+                    
+                    <div class="border-top pt-4 mt-4">
+                        <h6 class="text-muted mb-3"><i class="bi bi-question-circle"></i> Frequently Asked Questions</h6>
+                        <div class="accordion" id="faqAccordion">
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq1">
+                                        How far back can I generate statements?
+                                    </button>
+                                </h2>
+                                <div id="faq1" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        You can generate statements for any date range within your account history. There is no limitation on how far back you can go.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq2">
+                                        What information is included in the statement?
+                                    </button>
+                                </h2>
+                                <div id="faq2" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        The statement includes opening balance, all transactions (deposits, withdrawals, transfers), closing balance, and transaction details for the selected period.
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="accordion-item">
+                                <h2 class="accordion-header">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#faq3">
+                                        What's the difference between PDF and CSV formats?
+                                    </button>
+                                </h2>
+                                <div id="faq3" class="accordion-collapse collapse" data-bs-parent="#faqAccordion">
+                                    <div class="accordion-body">
+                                        <strong>PDF:</strong> Professional formatted document suitable for printing and sharing.<br>
+                                        <strong>CSV:</strong> Spreadsheet format that can be imported into Excel or other accounting software.
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

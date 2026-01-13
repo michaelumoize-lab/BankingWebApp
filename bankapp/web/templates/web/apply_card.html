@@ -1,0 +1,154 @@
+{% extends "web/base.html" %}
+
+{% block title %}Apply for Debit Card - BankApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h2 class="mb-0 text-white"><i class="bi bi-credit-card"></i> Apply for Debit Card</h2>
+            </div>
+            <div class="card-body p-5">
+                {% if error %}
+                <div class="alert alert-danger alert-custom mb-4" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> {{ error }}
+                </div>
+                {% endif %}
+
+                {% if message %}
+                <div class="alert alert-info alert-custom mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i> {{ message }}
+                </div>
+                {% endif %}
+
+                {% if success %}
+                <div class="alert alert-success alert-custom mb-4" role="alert">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Application Submitted!</strong><br>
+                    <small>Your card application has been submitted for admin review. You'll be notified once approved.</small>
+                </div>
+
+                {% if card_app %}
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Application Details</h5>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Status</p>
+                                <p class="fw-600"><span class="badge bg-warning">{{ card_app.status }}</span></p>
+                            </div>
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Card Type</p>
+                                <p class="fw-600">{{ card_app.card_type }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-muted small mb-1">Purpose</p>
+                            <p class="fw-600">{{ card_app.purpose }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info alert-custom mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i> 
+                    <strong>What's Next?</strong><br>
+                    Our admin team will review your application shortly. Once approved, you'll receive a notification and can pay the $10 issuance fee to activate your card.
+                </div>
+
+                <a href="{% url 'view_debit_card' %}" class="btn btn-primary-custom btn-custom w-100 mb-2">
+                    <i class="bi bi-arrow-left"></i> Back to My Card
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary w-100">
+                    <i class="bi bi-house"></i> Back to Dashboard
+                </a>
+                {% endif %}
+
+                {% elif existing_app %}
+                <div class="alert alert-info alert-custom mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i> You have an existing card application.
+                </div>
+
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Your Application</h5>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Status</p>
+                                {% if existing_app.status == 'PENDING' %}
+                                <p class="fw-600"><span class="badge bg-warning">Pending Review</span></p>
+                                {% elif existing_app.status == 'APPROVED' %}
+                                <p class="fw-600"><span class="badge bg-success">Approved</span></p>
+                                {% else %}
+                                <p class="fw-600"><span class="badge bg-danger">Rejected</span></p>
+                                {% endif %}
+                            </div>
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Card Type</p>
+                                <p class="fw-600">{{ existing_app.card_type }}</p>
+                            </div>
+                        </div>
+                        <div>
+                            <p class="text-muted small mb-1">Purpose</p>
+                            <p class="fw-600">{{ existing_app.purpose }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                {% if existing_app.status == 'APPROVED' %}
+                <div class="alert alert-success alert-custom mb-4" role="alert">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Great News!</strong> Your application has been approved. You can now proceed to pay the $10 issuance fee.
+                </div>
+
+                <a href="{% url 'pay_card_fee' %}" class="btn btn-success-custom btn-custom w-100 mb-2">
+                    <i class="bi bi-credit-card"></i> Pay & Activate Card
+                </a>
+                {% endif %}
+
+                <a href="{% url 'view_debit_card' %}" class="btn btn-secondary w-100">
+                    <i class="bi bi-arrow-left"></i> Back to My Card
+                </a>
+
+                {% else %}
+                <!-- Application Form -->
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="purpose" class="form-label fw-600">Why do you need a debit card?</label>
+                        <textarea class="form-control form-control-custom" id="purpose" name="purpose" rows="4" 
+                                  placeholder="Tell us why you need this card (online shopping, ATM withdrawals, etc.)" required></textarea>
+                        <small class="text-muted">This helps our team understand your needs</small>
+                    </div>
+
+                    <div class="alert alert-info alert-custom mb-4" role="alert">
+                        <i class="bi bi-info-circle"></i>
+                        <strong>Card Details:</strong><br>
+                        <ul class="mb-0">
+                            <li>Type: Debit Card</li>
+                            <li>Fee: $10.00 (one-time)</li>
+                            <li>Validity: 4 years</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-success-custom btn-custom py-2">
+                            <i class="bi bi-check-circle"></i> Submit Application
+                        </button>
+                        <a href="{% url 'view_debit_card' %}" class="btn btn-secondary py-2">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                    </div>
+                </form>
+
+                <div class="alert alert-warning alert-custom mt-4 mb-0" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Note:</strong> Your application will be reviewed by our admin team. You'll receive a notification once approved or rejected.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

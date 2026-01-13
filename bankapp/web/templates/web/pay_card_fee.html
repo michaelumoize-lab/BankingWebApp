@@ -1,0 +1,151 @@
+{% extends "web/base.html" %}
+
+{% load humanize %}
+
+{% block title %}Pay Card Fee - BankApp{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-custom">
+            <div class="card-header-custom">
+                <h2 class="mb-0 text-white"><i class="bi bi-credit-card"></i> Debit Card Issuance</h2>
+            </div>
+            <div class="card-body p-5">
+                {% if error %}
+                <div class="alert alert-danger alert-custom" role="alert">
+                    <i class="bi bi-exclamation-circle"></i> {{ error }}
+                </div>
+                {% endif %}
+
+                {% if success %}
+                <div class="alert alert-success alert-custom mb-4" role="alert">
+                    <i class="bi bi-check-circle"></i>
+                    <strong>Card Activated Successfully!</strong><br>
+                    <small>Your debit card has been issued and is ready to use.</small>
+                </div>
+
+                {% if debit_card %}
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Your Card Details</h5>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Card Holder</p>
+                                <p class="fw-600">{{ debit_card.card_holder_name }}</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Card Number</p>
+                                <p class="fw-600 font-monospace">•••• •••• •••• {{ debit_card.card_number|slice:"-4:" }}</p>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Expiry Date</p>
+                                <p class="fw-600 font-monospace">{{ debit_card.expiry_date }}</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Status</p>
+                                <p class="fw-600"><span class="badge bg-success">{{ debit_card.status }}</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info alert-custom mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i> Your account has been charged ${{ debit_card.card_fee_amount|floatformat:2 }} for card issuance.
+                </div>
+
+                {% if account %}
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <p class="text-muted small mb-1">New Account Balance</p>
+                        <p class="h4 fw-600 text-success">${{ account.balance|floatformat:2|intcomma }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <a href="{% url 'view_debit_card' %}" class="btn btn-primary-custom btn-custom w-100 mb-2">
+                    <i class="bi bi-eye"></i> View Full Card Details
+                </a>
+                <a href="{% url 'dashboard' %}" class="btn btn-secondary w-100">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                {% else %}
+                <a href="{% url 'dashboard' %}" class="btn btn-primary-custom btn-custom w-100">
+                    <i class="bi bi-arrow-left"></i> Back to Dashboard
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+<!-- Pending Payment -->
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card card-custom mb-4">
+            <div class="card-header-custom">
+                <h3 class="mb-0 text-white"><i class="bi bi-info-circle"></i> Card Activation Fee</h3>
+            </div>
+            <div class="card-body p-5">
+                <div class="alert alert-info alert-custom mb-4" role="alert">
+                    <i class="bi bi-info-circle"></i>
+                    <strong>Card Issuance Fee</strong><br>
+                    A one-time fee of <strong>$10.00</strong> is required to activate your debit card.
+                </div>
+
+                {% if debit_card %}
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">Pre-Issued Card</h5>
+                        <div class="row mb-2">
+                            <div class="col-12">
+                                <p class="text-muted small mb-1">Card Status</p>
+                                <p class="fw-600"><span class="badge bg-warning">{{ debit_card.get_status_display }}</span></p>
+                            </div>
+                        </div>
+                        <div class="row mb-2">
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Card Holder</p>
+                                <p class="fw-600">{{ debit_card.card_holder_name }}</p>
+                            </div>
+                            <div class="col-6">
+                                <p class="text-muted small mb-1">Issuance Fee</p>
+                                <p class="fw-600">${{ debit_card.card_fee_amount|floatformat:2 }}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if account %}
+                <div class="card bg-light mb-4">
+                    <div class="card-body">
+                        <p class="text-muted small mb-1">Current Account Balance</p>
+                        <p class="h4 fw-600 text-primary">${{ account.balance|floatformat:2|intcomma }}</p>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" class="d-grid gap-2">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success-custom btn-custom py-2">
+                        <i class="bi bi-check-circle"></i> Pay $10.00 & Activate Card
+                    </button>
+                    <a href="{% url 'dashboard' %}" class="btn btn-secondary py-2">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                </form>
+
+                <div class="alert alert-warning alert-custom mt-4 mb-0" role="alert">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Note:</strong> The $10.00 fee will be deducted from your account balance upon payment.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

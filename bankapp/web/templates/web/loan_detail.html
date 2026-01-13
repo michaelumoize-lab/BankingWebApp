@@ -1,0 +1,179 @@
+{% extends "web/base.html" %}
+
+{% block title %}Loan Details - Banking App{% endblock %}
+
+{% block content %}
+<div class="container-main">
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card card-custom mb-4">
+                <div class="card-header-custom">
+                    <h3 class="mb-0">
+                        <i class="bi bi-cash-coin"></i> Loan Details
+                    </h3>
+                </div>
+                <div class="card-body p-4">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><i class="bi bi-info-circle"></i> Loan Information</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>Loan Type:</strong></td>
+                                    <td>{{ loan.get_loan_type_display }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Loan Amount:</strong></td>
+                                    <td><span class="badge bg-success text-light">${{ loan.loan_amount }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Interest Rate:</strong></td>
+                                    <td>{{ loan.interest_rate }}% per annum</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Loan Term:</strong></td>
+                                    <td>{{ loan.loan_term_months }} months</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Application Date:</strong></td>
+                                    <td>{{ loan.created_at|date:"M d, Y" }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-muted"><i class="bi bi-calculator"></i> Financial Details</h6>
+                            <table class="table table-sm table-borderless">
+                                <tr>
+                                    <td><strong>Monthly Payment:</strong></td>
+                                    <td><span class="badge bg-info text-light">${{ loan.monthly_payment }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Repayment:</strong></td>
+                                    <td><span class="badge bg-warning text-dark">${{ loan.total_repayment }}</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Total Interest:</strong></td>
+                                    <td>${{ loan.total_repayment|add:"-"|add:loan.loan_amount }}</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Status:</strong></td>
+                                    <td>
+                                        {% if loan.status == 'PENDING' %}
+                                        <span class="badge bg-warning">Pending Review</span>
+                                        {% elif loan.status == 'APPROVED' %}
+                                        <span class="badge bg-success">Approved</span>
+                                        {% elif loan.status == 'ACTIVE' %}
+                                        <span class="badge bg-info">Active/Disbursed</span>
+                                        {% elif loan.status == 'COMPLETED' %}
+                                        <span class="badge bg-secondary">Completed</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">{{ loan.get_status_display }}</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if loan.purpose %}
+                    <div class="border-top pt-3">
+                        <h6 class="text-muted"><i class="bi bi-file-text"></i> Loan Purpose</h6>
+                        <p class="mb-0">{{ loan.purpose }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    {% if loan.status == 'REJECTED' and loan.rejection_reason %}
+                    <div class="border-top pt-3 mt-3">
+                        <div class="alert alert-danger mb-0">
+                            <strong><i class="bi bi-exclamation-circle"></i> Rejection Reason:</strong>
+                            <p class="mb-0 mt-2">{{ loan.rejection_reason }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if loan.employment_status or loan.annual_income or loan.collateral_details %}
+                    <div class="border-top pt-3 mt-3">
+                        <h6 class="text-muted"><i class="bi bi-person-badge"></i> Applicant Details</h6>
+                        <table class="table table-sm table-borderless">
+                            {% if loan.employment_status %}
+                            <tr>
+                                <td><strong>Employment Status:</strong></td>
+                                <td>{{ loan.employment_status }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if loan.annual_income %}
+                            <tr>
+                                <td><strong>Annual Income:</strong></td>
+                                <td>${{ loan.annual_income }}</td>
+                            </tr>
+                            {% endif %}
+                            {% if loan.collateral_details %}
+                            <tr>
+                                <td><strong>Collateral:</strong></td>
+                                <td>{{ loan.collateral_details }}</td>
+                            </tr>
+                            {% endif %}
+                        </table>
+                    </div>
+                    {% endif %}
+                    
+                    {% if loan.reviewed_by and loan.reviewed_at %}
+                    <div class="border-top pt-3 mt-3">
+                        <h6 class="text-muted"><i class="bi bi-check-circle"></i> Review Information</h6>
+                        <table class="table table-sm table-borderless">
+                            <tr>
+                                <td><strong>Reviewed By:</strong></td>
+                                <td>{{ loan.reviewed_by.email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Reviewed On:</strong></td>
+                                <td>{{ loan.reviewed_at|date:"M d, Y h:i A" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card card-custom">
+                <div class="card-header-custom">
+                    <h5 class="mb-0"><i class="bi bi-lightning"></i> Quick Actions</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if loan.status == 'PENDING' %}
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-hourglass-split"></i> Your application is under review. Please wait for admin approval.
+                    </div>
+                    {% elif loan.status == 'APPROVED' %}
+                    <div class="alert alert-success mb-3">
+                        <i class="bi bi-check-circle"></i> Your application has been approved! The loan amount will be disbursed soon.
+                    </div>
+                    {% elif loan.status == 'ACTIVE' %}
+                    <div class="alert alert-info mb-3">
+                        <i class="bi bi-info-circle"></i> Your loan has been disbursed to your account.
+                    </div>
+                    {% elif loan.status == 'REJECTED' %}
+                    <div class="alert alert-danger mb-3">
+                        <i class="bi bi-x-circle"></i> Your application has been rejected.
+                    </div>
+                    {% endif %}
+                    
+                    <div>
+                        <a href="{% url 'loan_applications' %}" class="btn btn-outline-primary btn-sm w-100 mb-2">
+                            <i class="bi bi-list"></i> View All Loans
+                        </a>
+                        <a href="{% url 'apply_for_loan' %}" class="btn btn-primary btn-sm w-100 mb-2">
+                            <i class="bi bi-plus-lg"></i> Apply for New Loan
+                        </a>
+                        <a href="{% url 'dashboard' %}" class="btn btn-outline-secondary btn-sm w-100">
+                            <i class="bi bi-arrow-left"></i> Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
