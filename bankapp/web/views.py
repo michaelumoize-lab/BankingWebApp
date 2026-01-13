@@ -1,10 +1,10 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
 from django.utils import timezone
 from django.http import JsonResponse
-from core.models import BankAccount, User, ProfileUpdate, Notification, DebitCard, CardApplication, Loan, BankStatement, BillPayment, Review
-from core.services import deposit, withdraw, transfer
+from core.models import BankAccount, User, ProfileUpdate, Notification, DebitCard, CardApplication, Loan, BankStatement, BillPayment, Review, Receipt
+from core.services import deposit, withdraw, transfer, generate_receipt
 from decimal import Decimal
 
 
@@ -134,13 +134,30 @@ def dashboard(request):
     })
 
 @login_required
+@login_required
 def deposit_view(request):
     account = get_or_create_account(request.user)
     if request.method == "POST":
         try:
             amount = Decimal(request.POST.get("amount"))
-            deposit(account, amount, "Web deposit")
-            return redirect("dashboard")
+            txn = deposit(account, amount, "Web deposit")
+            
+            # Generate receipt
+            receipt = generate_receipt(
+                user=request.user,
+                transaction_type='deposit',
+                amount=amount,
+                description='Web deposit',
+                from_account='',
+                to_account=account.account_number,
+                recipient_name=f"{request.user.first_name} {request.user.last_name}"
+            )
+            
+            # Link transaction to receipt
+            txn.receipt = receipt
+            txn.save()
+            
+            return redirect('receipt_view', receipt_id=receipt.id)
         except (ValueError, Exception) as e:
             return render(request, "web/deposit.html", {"account": account, "error": str(e)})
     return render(request, "web/deposit.html", {"account": account})
@@ -151,8 +168,24 @@ def withdraw_view(request):
     if request.method == "POST":
         try:
             amount = Decimal(request.POST.get("amount"))
-            withdraw(account, amount, "Web withdrawal")
-            return redirect("dashboard")
+            txn = withdraw(account, amount, "Web withdrawal")
+            
+            # Generate receipt
+            receipt = generate_receipt(
+                user=request.user,
+                transaction_type='withdraw',
+                amount=amount,
+                description='Web withdrawal',
+                from_account=account.account_number,
+                to_account='',
+                recipient_name=f"{request.user.first_name} {request.user.last_name}"
+            )
+            
+            # Link transaction to receipt
+            txn.receipt = receipt
+            txn.save()
+            
+            return redirect('receipt_view', receipt_id=receipt.id)
         except (ValueError, Exception) as e:
             return render(request, "web/withdraw.html", {"account": account, "error": str(e)})
     return render(request, "web/withdraw.html", {"account": account})
@@ -180,8 +213,24 @@ def transfer_view(request):
             if not receiver_account.is_active:
                 raise ValueError("Recipient account is not active")
             
-            transfer(account, receiver_account, amount, "Web transfer")
-            return redirect("dashboard")
+            txn = transfer(account, receiver_account, amount, "Web transfer")
+            
+            # Generate receipt
+            receipt = generate_receipt(
+                user=request.user,
+                transaction_type='transfer',
+                amount=amount,
+                description='Web transfer',
+                from_account=account.account_number,
+                to_account=receiver_account.account_number,
+                recipient_name=f"{receiver_account.user.first_name} {receiver_account.user.last_name}"
+            )
+            
+            # Link transaction to receipt
+            txn.receipt = receipt
+            txn.save()
+            
+            return redirect('receipt_view', receipt_id=receipt.id)
         except BankAccount.DoesNotExist:
             return render(request, "web/transfer.html", {"account": account, "error": "Account number not found"})
         except ValueError as e:
@@ -675,3 +724,17 @@ def bill_payments_list(request):
         'payments': payments,
     }
     return render(request, 'web/bill_payments.html', context)
+
+
+@login_required
+def receipt_view(request, receipt_id):
+    """Display transaction receipt"""
+    receipt = get_object_or_404(Receipt, id=receipt_id, user=request.user)
+    return render(request, 'web/receipt.html', {'receipt': receipt})
+
+
+@login_required
+def receipts_list(request):
+    """List all receipts for user"""
+    receipts = Receipt.objects.filter(user=request.user).order_by('-created_at')
+    return render(request, 'web/receipts_list.html', {'receipts': receipts})

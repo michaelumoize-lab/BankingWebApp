@@ -1,6 +1,6 @@
 from django.contrib import admin
 from django.utils import timezone
-from .models import User, BankAccount, Transaction, ProfileUpdate, Notification, DebitCard, CardApplication, Loan, BankStatement, BillPayment, Review
+from .models import User, BankAccount, Transaction, ProfileUpdate, Notification, DebitCard, CardApplication, Loan, BankStatement, BillPayment, Review, Receipt
 
 @admin.register(User)
 class UserAdmin(admin.ModelAdmin):
@@ -256,3 +256,23 @@ class ReviewAdmin(admin.ModelAdmin):
         queryset.update(is_approved=False)
         self.message_user(request, f"Disapproved {queryset.count()} review(s).")
     disapprove_reviews.short_description = "Disapprove selected reviews"
+
+
+@admin.register(Receipt)
+class ReceiptAdmin(admin.ModelAdmin):
+    list_display = ('reference_number', 'user', 'transaction_type', 'amount', 'status', 'created_at')
+    list_filter = ('transaction_type', 'status', 'created_at')
+    search_fields = ('reference_number', 'user__email', 'from_account', 'to_account')
+    readonly_fields = ('id', 'reference_number', 'created_at', 'user')
+    
+    fieldsets = (
+        ('Receipt Info', {'fields': ('id', 'reference_number', 'user', 'created_at')}),
+        ('Transaction Details', {'fields': ('transaction_type', 'amount', 'description', 'status')}),
+        ('Account Info', {'fields': ('from_account', 'to_account', 'recipient_name')}),
+    )
+    
+    def has_add_permission(self, request):
+        return False
+    
+    def has_delete_permission(self, request, obj=None):
+        return False

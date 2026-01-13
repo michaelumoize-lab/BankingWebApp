@@ -106,6 +106,13 @@ class Transaction(models.Model):
     )
     timestamp = models.DateTimeField(auto_now_add=True)
     description = models.CharField(max_length=255, blank=True)
+    receipt = models.OneToOneField(
+        'Receipt',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='transaction'
+    )
 
     def __str__(self):
         return f"{self.transaction_type} - {self.amount}"
@@ -555,3 +562,45 @@ class Review(models.Model):
         verbose_name = "Review"
         verbose_name_plural = "Reviews"
         ordering = ["-created_at"]
+
+
+class Receipt(models.Model):
+    """Auto-generated receipt for all transactions"""
+    TRANSACTION_TYPES = [
+        ('transfer', 'Fund Transfer'),
+        ('deposit', 'Deposit'),
+        ('withdraw', 'Withdrawal'),
+        ('bill_payment', 'Bill Payment'),
+        ('loan_disbursal', 'Loan Disbursal'),
+        ('loan_payment', 'Loan Payment'),
+    ]
+    
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name="receipts")
+    transaction_type = models.CharField(max_length=20, choices=TRANSACTION_TYPES)
+    reference_number = models.CharField(max_length=50, unique=True, help_text="Unique transaction reference")
+    amount = models.DecimalField(max_digits=12, decimal_places=2)
+    description = models.TextField(help_text="Transaction details")
+    
+    # Transaction details
+    from_account = models.CharField(max_length=50, blank=True)
+    to_account = models.CharField(max_length=50, blank=True)
+    recipient_name = models.CharField(max_length=200, blank=True)
+    
+    # Status
+    status = models.CharField(
+        max_length=20, 
+        choices=[('pending', 'Pending'), ('completed', 'Completed'), ('failed', 'Failed')],
+        default='completed'
+    )
+    
+    # Timestamps
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['-created_at']
+        verbose_name = "Transaction Receipt"
+        verbose_name_plural = "Transaction Receipts"
+    
+    def __str__(self):
+        return f"{self.reference_number} - {self.get_transaction_type_display()}"

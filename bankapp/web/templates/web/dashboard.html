@@ -482,33 +482,40 @@
             {% if recent_transactions %}
                 <div style="max-height: 400px; overflow-y: auto;">
                     {% for transaction in recent_transactions|slice:":10" %}
-                    <div class="transaction-row">
-                        <div class="transaction-icon {% if transaction.transaction_type == 'DEPOSIT' %}deposit{% elif transaction.transaction_type == 'WITHDRAW' %}withdraw{% else %}transfer{% endif %}">
-                            {% if transaction.transaction_type == 'DEPOSIT' %}
-                                <i class="bi bi-plus-lg"></i>
-                            {% elif transaction.transaction_type == 'WITHDRAW' %}
-                                <i class="bi bi-dash-lg"></i>
-                            {% else %}
-                                <i class="bi bi-arrow-left-right"></i>
-                            {% endif %}
-                        </div>
-                        <div>
-                            <p class="mb-0 fw-600">{{ transaction.description|truncatewords:3 }}</p>
-                            <small class="text-muted">{{ transaction.timestamp|date:"M d, Y" }}</small>
-                        </div>
-                        <div class="text-end">
-                            <p class="mb-0 fw-600">
+                    <a href="{% if transaction.receipt %}{% url 'receipt_view' transaction.receipt.id %}{% else %}#{% endif %}" style="text-decoration: none; color: inherit;" class="{% if transaction.receipt %}cursor-pointer{% endif %}" title="{% if transaction.receipt %}View Receipt{% else %}Receipt not available{% endif %}">
+                        <div class="transaction-row" style="{% if transaction.receipt %}transition: all 0.2s ease; border-left: 3px solid transparent;{% endif %} padding-left: 10px;" {% if transaction.receipt %}onmouseover="this.style.backgroundColor='#f3f4f6'; this.style.borderLeftColor='#f97316';" onmouseout="this.style.backgroundColor='transparent'; this.style.borderLeftColor='transparent';"{% endif %}>
+                            <div class="transaction-icon {% if transaction.transaction_type == 'DEPOSIT' %}deposit{% elif transaction.transaction_type == 'WITHDRAW' %}withdraw{% else %}transfer{% endif %}">
                                 {% if transaction.transaction_type == 'DEPOSIT' %}
-                                    <span class="text-success">+${{ transaction.amount|floatformat:2|intcomma }}</span>
+                                    <i class="bi bi-plus-lg"></i>
+                                {% elif transaction.transaction_type == 'WITHDRAW' %}
+                                    <i class="bi bi-dash-lg"></i>
                                 {% else %}
-                                    <span class="text-danger">-${{ transaction.amount|floatformat:2|intcomma }}</span>
+                                    <i class="bi bi-arrow-left-right"></i>
                                 {% endif %}
-                            </p>
-                            <small class="text-muted">
-                                <i class="bi bi-check-circle-fill text-success"></i> Completed
-                            </small>
+                            </div>
+                            <div>
+                                <p class="mb-0 fw-600">{{ transaction.description|truncatewords:3 }}</p>
+                                <small class="text-muted">{{ transaction.timestamp|date:"M d, Y" }}</small>
+                            </div>
+                            <div class="text-end">
+                                <p class="mb-0 fw-600">
+                                    {% if transaction.transaction_type == 'DEPOSIT' %}
+                                        <span class="text-success">+${{ transaction.amount|floatformat:2|intcomma }}</span>
+                                    {% else %}
+                                        <span class="text-danger">-${{ transaction.amount|floatformat:2|intcomma }}</span>
+                                    {% endif %}
+                                </p>
+                                <small class="text-muted">
+                                    <i class="bi bi-check-circle-fill text-success"></i> 
+                                    {% if transaction.receipt %}
+                                        <span style="color: #f97316; font-weight: 600; cursor: pointer;">View Receipt</span>
+                                    {% else %}
+                                        Completed
+                                    {% endif %}
+                                </small>
+                            </div>
                         </div>
-                    </div>
+                    </a>
                     {% endfor %}
                 </div>
             {% else %}

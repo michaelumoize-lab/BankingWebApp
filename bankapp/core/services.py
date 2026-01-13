@@ -1,6 +1,24 @@
-from .models import BankAccount, Transaction
+from .models import BankAccount, Transaction, Receipt
 from django.db import transaction as db_transaction
 from decimal import Decimal
+import uuid
+
+def generate_receipt(user, transaction_type, amount, description, from_account="", to_account="", recipient_name="", status="completed"):
+    """Generate a receipt for any transaction"""
+    reference_number = f"{transaction_type.upper()}-{str(uuid.uuid4())[:8].upper()}"
+    
+    receipt = Receipt.objects.create(
+        user=user,
+        transaction_type=transaction_type,
+        amount=amount,
+        reference_number=reference_number,
+        description=description,
+        from_account=from_account,
+        to_account=to_account,
+        recipient_name=recipient_name,
+        status=status
+    )
+    return receipt
 
 def deposit(account: BankAccount, amount: Decimal, description: str = ""):
     if amount <= 0:
@@ -9,13 +27,13 @@ def deposit(account: BankAccount, amount: Decimal, description: str = ""):
     with db_transaction.atomic():
         account.balance += amount
         account.save()
-        Transaction.objects.create(
+        txn = Transaction.objects.create(
             account=account,
             amount=amount,
             transaction_type="DEPOSIT",
             description=description
         )
-    return account.balance
+    return txn
 
 def withdraw(account: BankAccount, amount: Decimal, description: str = ""):
     if amount <= 0:
@@ -26,13 +44,13 @@ def withdraw(account: BankAccount, amount: Decimal, description: str = ""):
     with db_transaction.atomic():
         account.balance -= amount
         account.save()
-        Transaction.objects.create(
+        txn = Transaction.objects.create(
             account=account,
             amount=amount,
             transaction_type="WITHDRAW",
             description=description
         )
-    return account.balance
+    return txn
 
 def transfer(sender: BankAccount, receiver: BankAccount, amount: Decimal, description: str = ""):
     if sender == receiver:
@@ -48,7 +66,7 @@ def transfer(sender: BankAccount, receiver: BankAccount, amount: Decimal, descri
         sender.save()
         receiver.save()
 
-        Transaction.objects.create(
+        txn = Transaction.objects.create(
             account=sender,
             amount=amount,
             transaction_type="TRANSFER",
@@ -62,4 +80,4 @@ def transfer(sender: BankAccount, receiver: BankAccount, amount: Decimal, descri
             description=f"Received from {sender.account_number}. {description}"
         )
 
-    return sender.balance, receiver.balance
+    return txn

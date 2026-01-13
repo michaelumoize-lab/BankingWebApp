@@ -30,5 +30,9 @@ urlpatterns = [
     # Bill Payment URLs
     path('bill/pay/', views.pay_bill, name='pay_bill'),
     path('bills/', views.bill_payments_list, name='bill_payments'),
+    
+    # Receipt URLs
+    path('receipt/<uuid:receipt_id>/', views.receipt_view, name='receipt_view'),
+    path('receipts/', views.receipts_list, name='receipts_list'),
 ]
 
