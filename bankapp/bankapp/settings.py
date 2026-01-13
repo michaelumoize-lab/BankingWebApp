@@ -41,8 +41,8 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'django.contrib.humanize',
 
-    'core',
-    'web',
+    'bankapp.core',
+    'bankapp.web',
 ]
 
 MIDDLEWARE = [
